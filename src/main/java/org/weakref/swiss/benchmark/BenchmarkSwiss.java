@@ -27,6 +27,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.runner.RunnerException;
+import org.weakref.swiss.SwissNaive;
 import org.weakref.swiss.SwissPseudoVector;
 import org.weakref.swiss.SwissVector;
 
@@ -71,7 +72,7 @@ public class BenchmarkSwiss
     }
 
     @Benchmark
-    public void swissVector()
+    public void benchmarkVector()
     {
         SwissVector table = new SwissVector(size);
         for (long value : data) {
@@ -80,9 +81,18 @@ public class BenchmarkSwiss
     }
 
     @Benchmark
-    public void swissPseudoVector()
+    public void benchmarkPseudoVector()
     {
         SwissPseudoVector table = new SwissPseudoVector(size);
+        for (long value : data) {
+            consume(table.put(value));
+        }
+    }
+
+    @Benchmark
+    public void benchmarkNaive()
+    {
+        SwissNaive table = new SwissNaive(size);
         for (long value : data) {
             consume(table.put(value));
         }
@@ -97,7 +107,8 @@ public class BenchmarkSwiss
             throws RunnerException
     {
         BenchmarkSwiss runner = new BenchmarkSwiss();
-//        runner.setup();
+        runner.setup();
+        runner.benchmarkNaive();
 //        runner.swissPseudoVector();
 //        runner.swissVector();
 
