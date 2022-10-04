@@ -13,6 +13,7 @@
  */
 package org.weakref.swiss.benchmark;
 
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.CompilerControl;
@@ -105,6 +106,15 @@ public class BenchmarkSwiss
         SwissNaive table = new SwissNaive(size);
         for (long value : data) {
             consume(table.put(value));
+        }
+    }
+
+    @Benchmark
+    public void benchmarkFastutil()
+    {
+        LongOpenHashSet table = new LongOpenHashSet(size);
+        for (long value : data) {
+            consume(table.add(value));
         }
     }
 
