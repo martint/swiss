@@ -25,9 +25,9 @@ import static java.lang.Long.rotateLeft;
 import static java.lang.Math.toIntExact;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
-public class SwissVector
+public class SwissVector64
 {
-    private static final VectorSpecies<Byte> SPECIES = ByteVector.SPECIES_128;
+    private static final VectorSpecies<Byte> SPECIES = ByteVector.SPECIES_64;
     private static final VarHandle LONG_HANDLE = MethodHandles.byteArrayViewVarHandle(long[].class, LITTLE_ENDIAN);
     private static final int VALUE_WIDTH = Long.BYTES;
 
@@ -40,7 +40,7 @@ public class SwissVector
     private int size;
     private final int maxSize;
 
-    public SwissVector(int maxSize)
+    public SwissVector64(int maxSize)
     {
         checkArgument(maxSize > 0, "maxSize must be greater than 0");
         long expandedSize = maxSize * 8L / 7L;

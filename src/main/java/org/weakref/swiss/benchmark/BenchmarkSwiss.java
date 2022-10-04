@@ -29,7 +29,8 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.runner.RunnerException;
 import org.weakref.swiss.SwissNaive;
 import org.weakref.swiss.SwissPseudoVector;
-import org.weakref.swiss.SwissVector;
+import org.weakref.swiss.SwissVector128;
+import org.weakref.swiss.SwissVector64;
 
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -72,9 +73,18 @@ public class BenchmarkSwiss
     }
 
     @Benchmark
-    public void benchmarkVector()
+    public void benchmarkVector128()
     {
-        SwissVector table = new SwissVector(size);
+        SwissVector128 table = new SwissVector128(size);
+        for (long value : data) {
+            consume(table.put(value));
+        }
+    }
+
+    @Benchmark
+    public void benchmarkVector64()
+    {
+        SwissVector64 table = new SwissVector64(size);
         for (long value : data) {
             consume(table.put(value));
         }
