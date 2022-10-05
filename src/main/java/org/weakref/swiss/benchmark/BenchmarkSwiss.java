@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
 @OperationsPerInvocation(BenchmarkSwiss.INSERTIONS)
 public class BenchmarkSwiss
 {
-    public final static int INSERTIONS = 10_000;
+    public final static int INSERTIONS = 1_000;
 
     @Param({"1000"})
     public int size = 1000;

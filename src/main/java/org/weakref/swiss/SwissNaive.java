@@ -18,9 +18,9 @@ import java.lang.invoke.VarHandle;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static java.lang.Long.rotateLeft;
 import static java.lang.Math.toIntExact;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
+import static org.weakref.swiss.HashFunction.hash;
 
 public class SwissNaive
 {
@@ -90,12 +90,6 @@ public class SwissNaive
     private int bucket(int hash)
     {
         return hash & mask;
-    }
-
-    private long hash(long value)
-    {
-        // xxHash64 mix
-        return rotateLeft(value * 0xC2B2AE3D27D4EB4FL, 31) * 0x9E3779B185EBCA87L;
     }
 
     public static void main(String[] args)
