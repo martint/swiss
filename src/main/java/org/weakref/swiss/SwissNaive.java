@@ -24,7 +24,6 @@ import static org.weakref.swiss.HashFunction.hash;
 
 public class SwissNaive
 {
-    private static final int GROUP_LENGTH = Long.BYTES;
     private static final VarHandle LONG_HANDLE = MethodHandles.byteArrayViewVarHandle(long[].class, LITTLE_ENDIAN);
     private static final int VALUE_WIDTH = Long.BYTES;
 
@@ -41,13 +40,13 @@ public class SwissNaive
     {
         checkArgument(maxSize > 0, "maxSize must be greater than 0");
         long expandedSize = maxSize * 8L / 7L;
-        expandedSize = Math.max(GROUP_LENGTH, 1L << (64 - Long.numberOfLeadingZeros(expandedSize - 1)));
+        expandedSize = 1L << (64 - Long.numberOfLeadingZeros(expandedSize - 1));
         checkArgument(expandedSize < (1L << 30), "Too large (" + maxSize + " expected elements with load factor 7/8)");
         capacity = (int) expandedSize;
 
         this.maxSize = maxSize;
         mask = capacity - 1;
-        control = new byte[capacity + GROUP_LENGTH];
+        control = new byte[capacity];
         values = new byte[toIntExact(((long) VALUE_WIDTH * capacity))];
     }
 
