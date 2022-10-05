@@ -29,6 +29,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.runner.RunnerException;
 import org.weakref.swiss.SwissGrouped;
+import org.weakref.swiss.SwissNaive;
 import org.weakref.swiss.SwissPseudoVector;
 import org.weakref.swiss.SwissVector128;
 import org.weakref.swiss.SwissVector64;
@@ -104,6 +105,15 @@ public class BenchmarkSwiss
     public void benchmarkGrouped()
     {
         SwissGrouped table = new SwissGrouped(size);
+        for (long value : data) {
+            consume(table.put(value));
+        }
+    }
+
+    @Benchmark
+    public void benchmarkNaive()
+    {
+        SwissNaive table = new SwissNaive(size);
         for (long value : data) {
             consume(table.put(value));
         }
