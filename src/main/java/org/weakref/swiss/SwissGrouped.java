@@ -22,7 +22,7 @@ import static java.lang.Long.rotateLeft;
 import static java.lang.Math.toIntExact;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
-public class SwissNaive
+public class SwissGrouped
 {
     private static final int GROUP_LENGTH = Long.BYTES;
     private static final VarHandle LONG_HANDLE = MethodHandles.byteArrayViewVarHandle(long[].class, LITTLE_ENDIAN);
@@ -37,7 +37,7 @@ public class SwissNaive
     private int size;
     private final int maxSize;
 
-    public SwissNaive(int maxSize)
+    public SwissGrouped(int maxSize)
     {
         checkArgument(maxSize > 0, "maxSize must be greater than 0");
         long expandedSize = maxSize * 8L / 7L;
