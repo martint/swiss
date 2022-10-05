@@ -62,6 +62,7 @@ public class SwissVector128
         byte hashPrefix = (byte) (hash & 0x7F | 0x80);
         int bucket = bucket((int) (hash >> 7));
 
+        int step = 1;
         while (true) {
             ByteVector controlVector = ByteVector.fromArray(SPECIES, control, bucket);
 
@@ -78,7 +79,8 @@ public class SwissVector128
                 return true;
             }
 
-            bucket = bucket(bucket + SPECIES.length());
+            bucket = bucket(bucket + step);
+            step += SPECIES.length();
         }
     }
 
@@ -89,6 +91,7 @@ public class SwissVector128
         byte hashPrefix = (byte) (hash & 0x7F | 0x80);
         int bucket = bucket((int) (hash >> 7));
 
+        int step = 1;
         while (true) {
             ByteVector controlVector = ByteVector.fromArray(SPECIES, control, bucket);
 
@@ -100,7 +103,8 @@ public class SwissVector128
                 return false;
             }
 
-            bucket = bucket(bucket + SPECIES.length());
+            bucket = bucket(bucket + step);
+            step += SPECIES.length();
         }
     }
 

@@ -59,6 +59,7 @@ public class SwissPseudoVector
         byte hashPrefix = (byte) (hash & 0x7F | 0x80);
         int bucket = bucket((int) (hash >> 7));
 
+        int step = 1;
         long repeated = repeat(hashPrefix);
 
         while (true) {
@@ -77,7 +78,8 @@ public class SwissPseudoVector
                 return true;
             }
 
-            bucket = bucket(bucket + VECTOR_LENGTH);
+            bucket = bucket(bucket + step);
+            step += VECTOR_LENGTH;
         }
     }
 
