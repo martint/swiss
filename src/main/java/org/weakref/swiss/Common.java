@@ -15,11 +15,19 @@ package org.weakref.swiss;
 
 import static java.lang.Long.rotateLeft;
 
-public class HashFunction
+public class Common
 {
+    public static final double DEFAULT_LOAD_FACTOR = 15.0 / 16;
+
     public static long hash(long value)
     {
         // xxHash64 mix
         return rotateLeft(value * 0xC2B2AE3D27D4EB4FL, 31) * 0x9E3779B185EBCA87L;
+    }
+
+    public static int computeCapacity(int maxSize, double loadFactor)
+    {
+        int capacity = (int) (maxSize / loadFactor);
+        return Math.toIntExact(1L << (64 - Long.numberOfLeadingZeros(capacity - 1)));
     }
 }

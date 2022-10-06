@@ -21,7 +21,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.Math.toIntExact;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
-import static org.weakref.swiss.HashFunction.hash;
+import static org.weakref.swiss.Common.*;
+import static org.weakref.swiss.Common.computeCapacity;
+import static org.weakref.swiss.Common.hash;
 
 public class SwissNaive
         implements SwissTable
@@ -32,24 +34,26 @@ public class SwissNaive
     private final byte[] control;
     private final byte[] values;
 
-    private final int capacity;
     private final int mask;
 
     private int size;
     private final int maxSize;
 
-    public SwissNaive(int maxSize)
+    public SwissNaive(int maxSize, double loadFactor)
     {
         checkArgument(maxSize > 0, "maxSize must be greater than 0");
-        long expandedSize = maxSize * 16L / 15L;
-        expandedSize = 1L << (64 - Long.numberOfLeadingZeros(expandedSize - 1));
-        checkArgument(expandedSize < (1L << 30), "Too large (" + maxSize + " expected elements with load factor 7/8)");
-        capacity = (int) expandedSize;
+        checkArgument(loadFactor > 0 && loadFactor <= 1, "loadFactor must be in (0, 1] range");
+        int capacity = computeCapacity(maxSize, loadFactor);
 
         this.maxSize = maxSize;
         mask = capacity - 1;
         control = new byte[capacity];
         values = new byte[toIntExact(((long) VALUE_WIDTH * capacity))];
+    }
+
+    public SwissNaive(int maxSize)
+    {
+        this(maxSize, DEFAULT_LOAD_FACTOR);
     }
 
     public boolean put(long value)
