@@ -27,6 +27,7 @@ import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static org.weakref.swiss.HashFunction.hash;
 
 public class SwissVector64
+        implements SwissTable
 {
     private static final VectorSpecies<Byte> SPECIES = ByteVector.SPECIES_64;
     private static final VarHandle LONG_HANDLE = MethodHandles.byteArrayViewVarHandle(long[].class, LITTLE_ENDIAN);

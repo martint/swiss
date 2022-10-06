@@ -24,6 +24,7 @@ import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static org.weakref.swiss.HashFunction.hash;
 
 public class SwissNaive
+        implements SwissTable
 {
     private static final VarHandle LONG_HANDLE = MethodHandles.byteArrayViewVarHandle(long[].class, LITTLE_ENDIAN);
     private static final int VALUE_WIDTH = Long.BYTES;
