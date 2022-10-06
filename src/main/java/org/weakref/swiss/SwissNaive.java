@@ -13,24 +13,18 @@
  */
 package org.weakref.swiss;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 import java.util.Arrays;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.Math.toIntExact;
-import static java.nio.ByteOrder.LITTLE_ENDIAN;
-import static org.weakref.swiss.Common.*;
+import static org.weakref.swiss.Common.DEFAULT_LOAD_FACTOR;
 import static org.weakref.swiss.Common.computeCapacity;
 import static org.weakref.swiss.Common.hash;
 
 public class SwissNaive
         implements SwissTable
 {
-    private static final VarHandle LONG_HANDLE = MethodHandles.byteArrayViewVarHandle(long[].class, LITTLE_ENDIAN);
-    private static final int VALUE_WIDTH = Long.BYTES;
-
     private final byte[] control;
     private final byte[] values;
 
@@ -38,26 +32,31 @@ public class SwissNaive
 
     private int size;
     private final int maxSize;
+    private final int entrySize;
 
-    public SwissNaive(int maxSize, double loadFactor)
+    public SwissNaive(int entrySize, int maxSize, double loadFactor)
     {
+        checkArgument(entrySize > 0, "entrySize must be greater than 0");
         checkArgument(maxSize > 0, "maxSize must be greater than 0");
         checkArgument(loadFactor > 0 && loadFactor <= 1, "loadFactor must be in (0, 1] range");
         int capacity = computeCapacity(maxSize, loadFactor);
 
+        this.entrySize = entrySize;
         this.maxSize = maxSize;
         mask = capacity - 1;
         control = new byte[capacity];
-        values = new byte[toIntExact(((long) VALUE_WIDTH * capacity))];
+        values = new byte[toIntExact(((long) entrySize * capacity))];
     }
 
-    public SwissNaive(int maxSize)
+    public SwissNaive(int entrySize, int maxSize)
     {
-        this(maxSize, DEFAULT_LOAD_FACTOR);
+        this(entrySize, maxSize, DEFAULT_LOAD_FACTOR);
     }
 
-    public boolean put(long value)
+    public boolean put(byte[] value)
     {
+        checkArgument(value.length == entrySize);
+
         long hash = hash(value);
         byte hashPrefix = (byte) (hash & 0x7F | 0x80);
         int bucket = bucket((int) (hash >> 7));
@@ -65,7 +64,7 @@ public class SwissNaive
         int step = 1;
         while (true) {
             byte controlEntry = control[bucket];
-            if (controlEntry == hashPrefix && (long) LONG_HANDLE.get(values, bucket * VALUE_WIDTH) == value) {
+            if (controlEntry == hashPrefix && valueEquals(bucket, value)) {
                 return false;
             }
             
@@ -83,8 +82,10 @@ public class SwissNaive
         }
     }
 
-    public boolean find(long value)
+    public boolean find(byte[] value)
     {
+        checkArgument(value.length == entrySize);
+
         long hash = hash(value);
         byte hashPrefix = (byte) (hash & 0x7F | 0x80);
         int bucket = bucket((int) (hash >> 7));
@@ -92,7 +93,7 @@ public class SwissNaive
         int step = 1;
         while (true) {
             byte controlEntry = control[bucket];
-            if (controlEntry == hashPrefix && (long) LONG_HANDLE.get(values, bucket * VALUE_WIDTH) == value) {
+            if (controlEntry == hashPrefix && valueEquals(bucket, value)) {
                 return true;
             }
 
@@ -112,27 +113,20 @@ public class SwissNaive
         Arrays.fill(control, (byte) 0);
     }
 
-    private void insert(int index, long value, byte hashPrefix)
+    private void insert(int index, byte[] value, byte hashPrefix)
     {
         control[index] = hashPrefix;
-        LONG_HANDLE.set(values, index * VALUE_WIDTH, value);
+        System.arraycopy(value, 0, values, index * entrySize, value.length);
+    }
+
+    private boolean valueEquals(int bucket, byte[] value)
+    {
+        int start = bucket * entrySize;
+        return Arrays.equals(values, start, start + value.length, value, 0, value.length);
     }
 
     private int bucket(int hash)
     {
         return hash & mask;
-    }
-
-    public static void main(String[] args)
-    {
-        int size = 10;
-        SwissNaive table = new SwissNaive(size);
-        for (int i = 0; i < size - 1; i++) {
-            table.put(i);
-        }
-
-        for (int i = 0; i < size - 1; i++) {
-            table.put(i);
-        }
     }
 }

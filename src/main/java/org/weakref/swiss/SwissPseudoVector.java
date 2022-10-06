@@ -30,7 +30,6 @@ public class SwissPseudoVector
 {
     private static final int VECTOR_LENGTH = Long.BYTES;
     private static final VarHandle LONG_HANDLE = MethodHandles.byteArrayViewVarHandle(long[].class, LITTLE_ENDIAN);
-    private static final int VALUE_WIDTH = Long.BYTES;
 
     private final byte[] control;
     private final byte[] values;
@@ -40,27 +39,32 @@ public class SwissPseudoVector
 
     private int size;
     private final int maxSize;
+    private final int entrySize;
 
-    public SwissPseudoVector(int maxSize, double loadFactor)
+    public SwissPseudoVector(int entrySize, int maxSize, double loadFactor)
     {
+        checkArgument(entrySize > 0, "entrySize must be greater than 0");
         checkArgument(maxSize > 0, "maxSize must be greater than 0");
         checkArgument(loadFactor > 0 && loadFactor <= 1, "loadFactor must be in (0, 1] range");
         int capacity = Math.max(VECTOR_LENGTH, computeCapacity(maxSize, loadFactor));
 
+        this.entrySize = entrySize;
         this.maxSize = maxSize;
         this.capacity = capacity;
         mask = capacity - 1;
         control = new byte[capacity + VECTOR_LENGTH];
-        values = new byte[toIntExact(((long) VALUE_WIDTH * capacity))];
+        values = new byte[toIntExact(((long) entrySize * capacity))];
     }
 
-    public SwissPseudoVector(int maxSize)
+    public SwissPseudoVector(int entrySize, int maxSize)
     {
-        this(maxSize, DEFAULT_LOAD_FACTOR);
+        this(entrySize, maxSize, DEFAULT_LOAD_FACTOR);
     }
 
-    public boolean put(long value)
+    public boolean put(byte[] value)
     {
+        checkArgument(value.length == entrySize);
+
         long hash = hash(value);
         byte hashPrefix = (byte) (hash & 0x7F | 0x80);
         int bucket = bucket((int) (hash >> 7));
@@ -92,8 +96,10 @@ public class SwissPseudoVector
         }
     }
 
-    public boolean find(long value)
+    public boolean find(byte[] value)
     {
+        checkArgument(value.length == entrySize);
+
         long hash = hash(value);
         byte hashPrefix = (byte) (hash & 0x7F | 0x80);
         int bucket = bucket((int) (hash >> 7));
@@ -127,16 +133,15 @@ public class SwissPseudoVector
     private int findEmpty(long vector)
     {
         long controlMatches = match(vector, 0x00_00_00_00_00_00_00_00L);
-        return controlMatches != 0 ? Long.numberOfTrailingZeros(controlMatches) >>> 3 : VECTOR_LENGTH;
+        return controlMatches != 0 ? (Long.numberOfTrailingZeros(controlMatches) >>> 3) : VECTOR_LENGTH;
     }
 
-    private boolean matchInBucket(long value, int bucket, long repeated, long controlVector)
+    private boolean matchInBucket(byte[] value, int bucket, long repeated, long controlVector)
     {
         long controlMatches = match(controlVector, repeated);
         while (controlMatches != 0) {
-            int index = bucket(bucket + (Long.numberOfTrailingZeros(controlMatches) >>> 3)) * VALUE_WIDTH;
 
-            if ((long) LONG_HANDLE.get(values, index) == value) {
+            if (valueEquals(bucket(bucket + (Long.numberOfTrailingZeros(controlMatches) >>> 3)), value)) {
                 return true;
             }
 
@@ -145,14 +150,14 @@ public class SwissPseudoVector
         return false;
     }
 
-    private void insert(int index, long value, byte hashPrefix)
+    private void insert(int index, byte[] value, byte hashPrefix)
     {
         control[index] = hashPrefix;
         if (index < VECTOR_LENGTH) {
             control[index + capacity] = hashPrefix;
         }
 
-        LONG_HANDLE.set(values, index * VALUE_WIDTH, value);
+        System.arraycopy(value, 0, values, index * entrySize, value.length);
     }
 
     private static long repeat(byte value)
@@ -170,5 +175,11 @@ public class SwissPseudoVector
     private int bucket(int hash)
     {
         return hash & mask;
+    }
+
+    private boolean valueEquals(int bucket, byte[] value)
+    {
+        int start = bucket * entrySize;
+        return Arrays.equals(values, start, start + value.length, value, 0, value.length);
     }
 }

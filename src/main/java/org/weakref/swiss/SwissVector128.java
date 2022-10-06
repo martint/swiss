@@ -33,7 +33,6 @@ public class SwissVector128
 {
     private static final VectorSpecies<Byte> SPECIES = ByteVector.SPECIES_128;
     private static final VarHandle LONG_HANDLE = MethodHandles.byteArrayViewVarHandle(long[].class, LITTLE_ENDIAN);
-    private static final int VALUE_WIDTH = Long.BYTES;
 
     private final byte[] control;
     private final byte[] values;
@@ -43,27 +42,32 @@ public class SwissVector128
 
     private int size;
     private final int maxSize;
+    private final int entrySize;
 
-    public SwissVector128(int maxSize, double loadFactor)
+    public SwissVector128(int entrySize, int maxSize, double loadFactor)
     {
+        checkArgument(entrySize > 0, "entrySize must be greater than 0");
         checkArgument(maxSize > 0, "maxSize must be greater than 0");
         checkArgument(loadFactor > 0 && loadFactor <= 1, "loadFactor must be in (0, 1] range");
         int capacity = Math.max(SPECIES.length(), computeCapacity(maxSize, loadFactor));
 
+        this.entrySize = entrySize;
         this.maxSize = maxSize;
         this.capacity = capacity;
         mask = capacity - 1;
         control = new byte[capacity + SPECIES.length()];
-        values = new byte[toIntExact(((long) VALUE_WIDTH * capacity))];
+        values = new byte[toIntExact(((long) entrySize * capacity))];
     }
 
-    public SwissVector128(int maxSize)
+    public SwissVector128(int entrySize, int maxSize)
     {
-        this(maxSize, DEFAULT_LOAD_FACTOR);
+        this(entrySize, maxSize, DEFAULT_LOAD_FACTOR);
     }
 
-    public boolean put(long value)
+    public boolean put(byte[] value)
     {
+        checkArgument(value.length == entrySize);
+
         long hash = hash(value);
         byte hashPrefix = (byte) (hash & 0x7F | 0x80);
         int bucket = bucket((int) (hash >> 7));
@@ -92,7 +96,7 @@ public class SwissVector128
         }
     }
 
-    public boolean find(long value)
+    public boolean find(byte[] value)
     {
         long hash = hash(value);
 
@@ -128,30 +132,33 @@ public class SwissVector128
         return vector.eq((byte) 0).firstTrue();
     }
 
-    private void insert(int bucket, long value, byte control)
+    private void insert(int bucket, byte[] value, byte control)
     {
         this.control[bucket] = control;
         if (bucket < SPECIES.length()) {
             this.control[bucket + capacity] = control;
         }
 
-        int index = bucket * VALUE_WIDTH;
-        LONG_HANDLE.set(values, index, value);
+        System.arraycopy(value, 0, values, bucket * entrySize, value.length);
     }
 
-    private boolean matchInBucket(long value, byte hashPrefix, int bucket, ByteVector controlVector)
+    private boolean matchInBucket(byte[] value, byte hashPrefix, int bucket, ByteVector controlVector)
     {
         long matches = controlVector.eq(hashPrefix).toLong();
         while (matches != 0) {
-            int index = bucket(bucket + Long.numberOfTrailingZeros(matches)) * VALUE_WIDTH;
-
-            if ((long) LONG_HANDLE.get(values, index) == value) {
+            if (valueEquals(bucket(bucket + Long.numberOfTrailingZeros(matches)), value)) {
                 return true;
             }
 
             matches = matches & (matches - 1);
         }
         return false;
+    }
+
+    private boolean valueEquals(int bucket, byte[] value)
+    {
+        int start = bucket * entrySize;
+        return Arrays.equals(values, start, start + value.length, value, 0, value.length);
     }
 
     private int bucket(int hash)

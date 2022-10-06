@@ -19,6 +19,11 @@ public class Common
 {
     public static final double DEFAULT_LOAD_FACTOR = 15.0 / 16;
 
+    public static long hash(byte[] value)
+    {
+        return XxHash64.hash(value);
+    }
+
     public static long hash(long value)
     {
         // xxHash64 mix

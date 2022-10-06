@@ -14,7 +14,8 @@
 package org.weakref.swiss.benchmark;
 
 import com.google.common.primitives.Longs;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.bytes.ByteArrays;
+import it.unimi.dsi.fastutil.objects.ObjectOpenCustomHashSet;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.CompilerControl;
@@ -34,6 +35,7 @@ import org.weakref.swiss.SwissPseudoVector;
 import org.weakref.swiss.SwissVector128;
 import org.weakref.swiss.SwissVector64;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -58,6 +60,9 @@ public class BenchmarkFind
 {
     public final static int OPERATIONS = 10_000;
 
+    @Param({"8", "100"})
+    public int payloadSize = 1000;
+
     @Param({"1000", "1000000"})
     public int size = 1000;
 
@@ -67,49 +72,60 @@ public class BenchmarkFind
     @Param({"0", "0.5", "1"})
     public double findMissingFraction = 1; // what percentage of find() operations will look for a missing item
 
-    private long[] values;
+    private byte[][] values;
 
     private SwissVector128 vector128;
     private SwissVector64 vector64;
     private SwissPseudoVector pseudoVector;
     private SwissNaive naive;
-    private LongOpenHashSet fastutil;
+    private ObjectOpenCustomHashSet<byte[]> fastutil;
 
     @Setup
     public void setup()
     {
-        vector128 = new SwissVector128(size);
-        vector64 = new SwissVector64(size);
-        pseudoVector = new SwissPseudoVector(size);
-        naive = new SwissNaive(size);
-        fastutil = new LongOpenHashSet(size, (float) DEFAULT_LOAD_FACTOR);
+        vector128 = new SwissVector128(payloadSize, size);
+        vector64 = new SwissVector64(payloadSize, size);
+        pseudoVector = new SwissPseudoVector(payloadSize, size);
+        naive = new SwissNaive(payloadSize, size);
+        fastutil = new ObjectOpenCustomHashSet<>(size, (float) DEFAULT_LOAD_FACTOR, ByteArrays.HASH_STRATEGY);
 
-        values = new long[OPERATIONS];
+        values = new byte[OPERATIONS][];
 
         int count = (int) (size * fillFraction);
         for (int i = 0; i < count; i++) {
-            vector128.put(i);
-            vector64.put(i);
-            pseudoVector.put(i);
-            naive.put(i);
-            fastutil.add(i);
+            byte[] value = toBytes(i, payloadSize);
+            vector128.put(value);
+            vector64.put(value);
+            pseudoVector.put(value);
+            naive.put(value);
+            fastutil.add(value);
         }
 
         int missing = (int) (findMissingFraction * OPERATIONS);
         for (int i = 0; i < missing; i++) {
-            values[i] = count + i;
+            values[i] = toBytes(count + i, payloadSize);
         }
         for (int i = missing; i < OPERATIONS; i++) {
-            values[i] = ThreadLocalRandom.current().nextLong(0, count);
+            values[i] = toBytes(ThreadLocalRandom.current().nextLong(0, count), payloadSize);
         }
 
-        Collections.shuffle(Longs.asList(values));
+        Collections.shuffle(Arrays.asList(values));
+    }
+
+    private byte[] toBytes(long value, int outputLength)
+    {
+        byte[] output = new byte[outputLength];
+        byte[] bytes = Longs.toByteArray(value);
+        Arrays.fill(output, (byte) 0);
+        System.arraycopy(bytes, 0, output, output.length - bytes.length, bytes.length);
+
+        return output;
     }
 
     @Benchmark
     public void benchmarkVector128()
     {
-        for (long value : values) {
+        for (byte[] value : values) {
             consume(vector128.find(value));
         }
     }
@@ -117,7 +133,7 @@ public class BenchmarkFind
     @Benchmark
     public void benchmarkVector64()
     {
-        for (long value : values) {
+        for (byte[] value : values) {
             consume(vector64.find(value));
         }
     }
@@ -125,7 +141,7 @@ public class BenchmarkFind
     @Benchmark
     public void benchmarkPseudoVector()
     {
-        for (long value : values) {
+        for (byte[] value : values) {
             consume(pseudoVector.find(value));
         }
     }
@@ -133,7 +149,7 @@ public class BenchmarkFind
     @Benchmark
     public void benchmarkNaive()
     {
-        for (long value : values) {
+        for (byte[] value : values) {
             consume(naive.find(value));
         }
     }
@@ -141,7 +157,7 @@ public class BenchmarkFind
     @Benchmark
     public void benchmarkFastutil()
     {
-        for (long value : values) {
+        for (byte[] value : values) {
             consume(fastutil.contains(value));
         }
     }
@@ -151,6 +167,27 @@ public class BenchmarkFind
     {
     }
 
+    record ComparableArray(byte[] value)
+    {
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            return Arrays.equals(this.value, ((ComparableArray) o).value);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Arrays.hashCode(value);
+        }
+    }
+    
     public static void main(String[] args)
             throws RunnerException
     {
