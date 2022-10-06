@@ -15,6 +15,7 @@ package org.weakref.swiss;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.util.Arrays;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -75,6 +76,35 @@ public class SwissNaive
             bucket = bucket(bucket + step);
             step++;
         }
+    }
+
+    public boolean find(long value)
+    {
+        long hash = hash(value);
+        byte hashPrefix = (byte) (hash & 0x7F | 0x80);
+        int bucket = bucket((int) (hash >> 7));
+
+        int step = 1;
+        while (true) {
+            byte controlEntry = control[bucket];
+            if (controlEntry == hashPrefix && (long) LONG_HANDLE.get(values, bucket * VALUE_WIDTH) == value) {
+                return true;
+            }
+
+            if (controlEntry == 0) {
+                return false;
+            }
+
+            bucket = bucket(bucket + step);
+            step++;
+        }
+    }
+
+    @Override
+    public void clear()
+    {
+        size = 0;
+        Arrays.fill(control, (byte) 0);
     }
 
     private void insert(int index, long value, byte hashPrefix)

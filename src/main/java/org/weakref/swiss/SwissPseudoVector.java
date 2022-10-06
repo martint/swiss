@@ -15,6 +15,7 @@ package org.weakref.swiss;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.util.Arrays;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -83,6 +84,38 @@ public class SwissPseudoVector
         }
     }
 
+    public boolean find(long value)
+    {
+        long hash = hash(value);
+        byte hashPrefix = (byte) (hash & 0x7F | 0x80);
+        int bucket = bucket((int) (hash >> 7));
+
+        int step = 1;
+        long repeated = repeat(hashPrefix);
+
+        while (true) {
+            final long controlVector = (long) LONG_HANDLE.get(control, bucket);
+
+            if (matchInBucket(value, bucket, repeated, controlVector)) {
+                return true;
+            }
+
+            if (findEmpty(controlVector) != VECTOR_LENGTH) {
+                return false;
+            }
+
+            bucket = bucket(bucket + step);
+            step += VECTOR_LENGTH;
+        }
+    }
+
+    @Override
+    public void clear()
+    {
+        size = 0;
+        Arrays.fill(control, (byte) 0);
+    }
+
     private int findEmpty(long vector)
     {
         long controlMatches = match(vector, 0x00_00_00_00_00_00_00_00L);
@@ -128,11 +161,6 @@ public class SwissPseudoVector
         // HD 6-1
         long comparison = vector ^ repeatedValue;
         return (comparison - 0x01_01_01_01_01_01_01_01L) & ~comparison & 0x80_80_80_80_80_80_80_80L;
-    }
-
-    public boolean find(long value)
-    {
-        throw new UnsupportedOperationException("not yet implemented");
     }
 
     private int bucket(int hash)

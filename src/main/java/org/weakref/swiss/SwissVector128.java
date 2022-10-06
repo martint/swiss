@@ -18,6 +18,7 @@ import jdk.incubator.vector.VectorSpecies;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.util.Arrays;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -106,6 +107,13 @@ public class SwissVector128
             bucket = bucket(bucket + step);
             step += SPECIES.length();
         }
+    }
+
+    @Override
+    public void clear()
+    {
+        size = 0;
+        Arrays.fill(control, (byte) 0);
     }
 
     private static int findEmpty(ByteVector vector)
