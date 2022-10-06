@@ -150,11 +150,7 @@ public class SwissPseudoVector
 
     private static long repeat(byte value)
     {
-        long repeated = value & 0xFFL;
-        repeated = (repeated << 8) | repeated;
-        repeated = (repeated << 16) | repeated;
-        repeated = (repeated << 32) | repeated;
-        return repeated;
+        return ((value & 0xFF) * 0x01_01_01_01_01_01_01_01L);
     }
 
     private static long match(long vector, long repeatedValue)
