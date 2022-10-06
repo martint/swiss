@@ -61,8 +61,6 @@ public class SwissPseudoVector
 
     public boolean put(long value)
     {
-        checkState(size < maxSize, "Table is full");
-
         long hash = hash(value);
         byte hashPrefix = (byte) (hash & 0x7F | 0x80);
         int bucket = bucket((int) (hash >> 7));
@@ -79,8 +77,11 @@ public class SwissPseudoVector
 
             int empty = findEmpty(controlVector);
             if (empty != VECTOR_LENGTH) {
+                checkState(size < maxSize, "Table is full");
+
                 int emptyIndex = bucket(bucket + empty);
                 insert(emptyIndex, value, hashPrefix);
+
                 size++;
                 
                 return true;

@@ -64,8 +64,6 @@ public class SwissVector128
 
     public boolean put(long value)
     {
-        checkState(size < maxSize, "Table is full");
-
         long hash = hash(value);
         byte hashPrefix = (byte) (hash & 0x7F | 0x80);
         int bucket = bucket((int) (hash >> 7));
@@ -80,6 +78,8 @@ public class SwissVector128
 
             int empty = findEmpty(controlVector);
             if (empty != SPECIES.length()) {
+                checkState(size < maxSize, "Table is full");
+
                 int emptyIndex = bucket(bucket + empty);
                 insert(emptyIndex, value, hashPrefix);
                 size++;

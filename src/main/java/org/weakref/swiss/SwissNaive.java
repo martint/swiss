@@ -58,8 +58,6 @@ public class SwissNaive
 
     public boolean put(long value)
     {
-        checkState(size < maxSize, "Table is full");
-
         long hash = hash(value);
         byte hashPrefix = (byte) (hash & 0x7F | 0x80);
         int bucket = bucket((int) (hash >> 7));
@@ -72,6 +70,8 @@ public class SwissNaive
             }
             
             if (controlEntry == 0) {
+                checkState(size < maxSize, "Table is full");
+
                 insert(bucket, value, hashPrefix);
                 size++;
 
