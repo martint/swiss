@@ -60,15 +60,12 @@ public class SwissNaive
 
         int step = 1;
         while (true) {
-            if (control[bucket] == hashPrefix) {
-                int index = bucket * VALUE_WIDTH;
-
-                if ((long) LONG_HANDLE.get(values, index) == value) {
-                    return true;
-                }
+            byte controlEntry = control[bucket];
+            if (controlEntry == hashPrefix && (long) LONG_HANDLE.get(values, bucket * VALUE_WIDTH) == value) {
+                return false;
             }
             
-            if (control[bucket] == 0) {
+            if (controlEntry == 0) {
                 insert(bucket, value, hashPrefix);
                 size++;
 
