@@ -43,7 +43,7 @@ public class SwissVector128
     public SwissVector128(int maxSize)
     {
         checkArgument(maxSize > 0, "maxSize must be greater than 0");
-        long expandedSize = maxSize * 8L / 7L;
+        long expandedSize = maxSize * 16L / 15L;
         expandedSize = Math.max(SPECIES.length(), 1L << (64 - Long.numberOfLeadingZeros(expandedSize - 1)));
         checkArgument(expandedSize < (1L << 30), "Too large (" + maxSize + " expected elements with load factor 7/8)");
         capacity = (int) expandedSize;
