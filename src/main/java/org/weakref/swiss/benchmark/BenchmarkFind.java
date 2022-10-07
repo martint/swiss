@@ -61,16 +61,20 @@ public class BenchmarkFind
 {
     public final static int OPERATIONS = 10_000;
 
-    @Param({"8", "100"})
+//    @Param({"8", "100"})
+    @Param({"100"})
     public int payloadSize = 1000;
 
-    @Param({"1000", "1000000"})
+//    @Param({"1000", "1000000"})
+    @Param({"1000000"})
     public int size = 1000;
 
-    @Param({"0.1", "0.9", "1"})
+//    @Param({"0.1", "0.9", "1"})
+    @Param({"1"})
     public double fillFraction = 0.1;
 
-    @Param({"0", "0.5", "1"})
+//    @Param({"0", "0.5", "1"})
+    @Param({"0.5"})
     public double findMissingFraction = 1; // what percentage of find() operations will look for a missing item
 
     private byte[][] values;
@@ -172,27 +176,6 @@ public class BenchmarkFind
     {
     }
 
-    record ComparableArray(byte[] value)
-    {
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            return Arrays.equals(this.value, ((ComparableArray) o).value);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return Arrays.hashCode(value);
-        }
-    }
-    
     public static void main(String[] args)
             throws RunnerException
     {
