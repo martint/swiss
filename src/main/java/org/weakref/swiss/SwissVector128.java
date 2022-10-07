@@ -24,9 +24,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.Math.toIntExact;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
-import static org.weakref.swiss.Common.*;
+import static org.weakref.swiss.Common.DEFAULT_LOAD_FACTOR;
 import static org.weakref.swiss.Common.computeCapacity;
-import static org.weakref.swiss.Common.hash;
 
 public class SwissVector128
         implements SwissTable
@@ -64,11 +63,10 @@ public class SwissVector128
         this(entrySize, maxSize, DEFAULT_LOAD_FACTOR);
     }
 
-    public boolean put(byte[] value)
+    public boolean put(long hash, byte[] value)
     {
         checkArgument(value.length == entrySize);
 
-        long hash = hash(value);
         byte hashPrefix = (byte) (hash & 0x7F | 0x80);
         int bucket = bucket((int) (hash >> 7));
 
@@ -96,10 +94,8 @@ public class SwissVector128
         }
     }
 
-    public boolean find(byte[] value)
+    public boolean find(long hash, byte[] value)
     {
-        long hash = hash(value);
-
         byte hashPrefix = (byte) (hash & 0x7F | 0x80);
         int bucket = bucket((int) (hash >> 7));
 

@@ -15,9 +15,19 @@ package org.weakref.swiss;
 
 public interface SwissTable
 {
-    boolean put(byte[] value);
-    
-    boolean find(byte[] value);
+    boolean put(long hash, byte[] value);
+
+    boolean find(long hash, byte[] value);
+
+    default boolean put(byte[] value)
+    {
+        return put(Common.hash(value), value);
+    }
+
+    default boolean find(byte[] value)
+    {
+        return find(Common.hash(value), value);
+    }
 
     void clear();
 }

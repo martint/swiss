@@ -61,11 +61,10 @@ public class SwissPseudoVector
         this(entrySize, maxSize, DEFAULT_LOAD_FACTOR);
     }
 
-    public boolean put(byte[] value)
+    public boolean put(long hash, byte[] value)
     {
         checkArgument(value.length == entrySize);
 
-        long hash = hash(value);
         byte hashPrefix = (byte) (hash & 0x7F | 0x80);
         int bucket = bucket((int) (hash >> 7));
 
@@ -96,11 +95,10 @@ public class SwissPseudoVector
         }
     }
 
-    public boolean find(byte[] value)
+    public boolean find(long hash, byte[] value)
     {
         checkArgument(value.length == entrySize);
 
-        long hash = hash(value);
         byte hashPrefix = (byte) (hash & 0x7F | 0x80);
         int bucket = bucket((int) (hash >> 7));
 

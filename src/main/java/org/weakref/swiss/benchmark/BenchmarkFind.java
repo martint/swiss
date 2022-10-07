@@ -41,6 +41,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static org.weakref.swiss.Common.DEFAULT_LOAD_FACTOR;
+import static org.weakref.swiss.Common.hash;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -73,6 +74,7 @@ public class BenchmarkFind
     public double findMissingFraction = 1; // what percentage of find() operations will look for a missing item
 
     private byte[][] values;
+    private long[] hashes;
 
     private SwissVector128 vector128;
     private SwissVector64 vector64;
@@ -90,6 +92,7 @@ public class BenchmarkFind
         fastutil = new ObjectOpenCustomHashSet<>(size, (float) DEFAULT_LOAD_FACTOR, ByteArrays.HASH_STRATEGY);
 
         values = new byte[OPERATIONS][];
+        hashes = new long[OPERATIONS];
 
         int count = (int) (size * fillFraction);
         for (int i = 0; i < count; i++) {
@@ -104,9 +107,11 @@ public class BenchmarkFind
         int missing = (int) (findMissingFraction * OPERATIONS);
         for (int i = 0; i < missing; i++) {
             values[i] = toBytes(count + i, payloadSize);
+            hashes[i] = hash(values[i]);
         }
         for (int i = missing; i < OPERATIONS; i++) {
             values[i] = toBytes(ThreadLocalRandom.current().nextLong(0, count), payloadSize);
+            hashes[i] = hash(values[i]);
         }
 
         Collections.shuffle(Arrays.asList(values));
@@ -125,32 +130,32 @@ public class BenchmarkFind
     @Benchmark
     public void benchmarkVector128()
     {
-        for (byte[] value : values) {
-            consume(vector128.find(value));
+        for (int i = 0; i < values.length; i++) {
+            consume(vector128.find(hashes[i], values[i]));
         }
     }
 
     @Benchmark
     public void benchmarkVector64()
     {
-        for (byte[] value : values) {
-            consume(vector64.find(value));
+        for (int i = 0; i < values.length; i++) {
+            consume(vector64.find(hashes[i], values[i]));
         }
     }
 
     @Benchmark
     public void benchmarkPseudoVector()
     {
-        for (byte[] value : values) {
-            consume(pseudoVector.find(value));
+        for (int i = 0; i < values.length; i++) {
+            consume(pseudoVector.find(hashes[i], values[i]));
         }
     }
 
     @Benchmark
     public void benchmarkNaive()
     {
-        for (byte[] value : values) {
-            consume(naive.find(value));
+        for (int i = 0; i < values.length; i++) {
+            consume(naive.find(hashes[i], values[i]));
         }
     }
 
