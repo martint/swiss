@@ -58,7 +58,7 @@ public class BenchmarkFind
 {
     public final static int OPERATIONS = 10_000;
 
-    @Param({"1000", "100000"})
+    @Param({"1000", "1000000"})
     public int size = 1000;
 
     @Param({"0.1", "0.9", "1"})
